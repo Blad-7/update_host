@@ -2,7 +2,7 @@ name: hydro_tracker_app
 description: "Hydro Tracker App"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 9.0.0+1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

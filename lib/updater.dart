@@ -37,7 +37,7 @@ class Updater {
   static const String url =
       "https://blad-7.github.io/update_host/update.json";
 
-  static const String currentVersion = "1.0.0";
+  static const String currentVersion = "9.0.0";
 
   // =========================
   // 🔍 ПРОВЕРКА
@@ -45,14 +45,17 @@ class Updater {
   static Future<UpdateInfo?> check() async {
     try {
       debugPrint("=== UPDATE CHECK START ===");
+      debugPrint("CURRENT VERSION: $currentVersion");
+      debugPrint("UPDATE URL: $url");
 
       final res = await http
           .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 5));
 
       debugPrint("STATUS: ${res.statusCode}");
 
       if (res.statusCode != 200) {
+        debugPrint("UPDATE CHECK FAILED: STATUS ${res.statusCode}");
         return null;
       }
 
@@ -64,6 +67,9 @@ class Updater {
       }
 
       final update = UpdateInfo.fromJson(data);
+
+      debugPrint("REMOTE VERSION: ${update.version}");
+      debugPrint("REMOTE APK URL: ${update.apkUrl}");
 
       if (update.version.isEmpty || update.apkUrl.isEmpty) {
         debugPrint("INVALID JSON DATA");
@@ -102,7 +108,8 @@ class Updater {
       }
 
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint("VERSION COMPARE ERROR: $e");
       return false;
     }
   }
@@ -118,6 +125,9 @@ class Updater {
     final path = "${dir.path}/update.apk";
     final file = File(path);
 
+    debugPrint("DOWNLOAD PATH: $path");
+    debugPrint("APK URL: $apkUrl");
+
     if (file.existsSync()) {
       file.deleteSync();
     }
@@ -125,8 +135,9 @@ class Updater {
     final dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 120),
         sendTimeout: const Duration(seconds: 15),
+        followRedirects: true,
       ),
     );
 
@@ -142,7 +153,14 @@ class Updater {
 
     debugPrint("DOWNLOAD COMPLETE: $path");
 
-    if (!file.existsSync() || file.lengthSync() < 1000000) {
+    if (!file.existsSync()) {
+      throw Exception("APK файл не найден после скачивания");
+    }
+
+    final size = file.lengthSync();
+    debugPrint("APK SIZE: $size");
+
+    if (size < 1000000) {
       throw Exception("APK поврежден или скачан не полностью");
     }
 
@@ -179,14 +197,13 @@ class _UpdateGateState extends State<UpdateGate> {
   @override
   void initState() {
     super.initState();
-
     Future.microtask(_check);
   }
 
   Future<void> _check() async {
     try {
       final upd = await Updater.check().timeout(
-        const Duration(seconds: 4),
+        const Duration(seconds: 6),
         onTimeout: () => null,
       );
 
@@ -254,12 +271,10 @@ class _UpdateGateState extends State<UpdateGate> {
 
   @override
   Widget build(BuildContext context) {
-    // Не блокируем приложение на старте
     if (loading) {
       return widget.child;
     }
 
-    // Экран обновления
     if (update != null) {
       return Scaffold(
         appBar: AppBar(
@@ -289,7 +304,12 @@ class _UpdateGateState extends State<UpdateGate> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Версия: ${update!.version}",
+                    "Текущая версия: ${Updater.currentVersion}",
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Новая версия: ${update!.version}",
                     style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 12),
@@ -333,7 +353,6 @@ class _UpdateGateState extends State<UpdateGate> {
       );
     }
 
-    // Основной экран приложения
     return widget.child;
   }
 }
