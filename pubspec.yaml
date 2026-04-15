@@ -1,0 +1,56 @@
+name: hydro_tracker_app
+description: "Hydro Tracker App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+
+  # 💾 Сохранение
+  shared_preferences: ^2.2.2
+
+  # 🌐 HTTP
+  http: ^0.13.6
+
+  # 📥 загрузка APK
+  dio: ^5.4.0
+
+  # 📁 файлы
+  path_provider: ^2.0.15
+
+  # 📦 открытие APK
+  open_filex: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+  # 🔥 ИКОНКИ
+  flutter_launcher_icons: ^0.13.1
+
+# =========================
+# ИКОНКИ
+# =========================
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+
+# =========================
+# FLUTTER
+# =========================
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/drop.png
+    - assets/icon.png
