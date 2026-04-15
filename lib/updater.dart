@@ -37,7 +37,7 @@ class Updater {
   static const String url =
       "https://blad-7.github.io/update_host/update.json";
 
-  static const String currentVersion = "9.0.0";
+  static const String currentVersion = "9.0.2";
 
   // =========================
   // 🔍 ПРОВЕРКА

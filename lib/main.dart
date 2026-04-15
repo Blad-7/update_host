@@ -113,8 +113,7 @@ class _WaterHomeState extends State<WaterHome> {
 
     if (raw != null) {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      dailyHistory =
-          decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+      dailyHistory = decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
     }
 
     waterMl = dailyHistory[todayKey] ?? 0;
@@ -137,7 +136,7 @@ class _WaterHomeState extends State<WaterHome> {
     });
 
     await _saveData();
-    _startReminder(); // 🔥 пересчет
+    _startReminder();
 
     if (!wasReached && isGoalReached) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,8 +168,9 @@ class _WaterHomeState extends State<WaterHome> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Отмена')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
           ElevatedButton(
             onPressed: () {
               final value = int.tryParse(controller.text);
@@ -213,8 +213,7 @@ class _WaterHomeState extends State<WaterHome> {
 
     if (interval < 20) interval = 20;
 
-    reminderTimer =
-        Timer.periodic(Duration(minutes: interval), (_) {
+    reminderTimer = Timer.periodic(Duration(minutes: interval), (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +225,6 @@ class _WaterHomeState extends State<WaterHome> {
   // =========================
   // UI
   // =========================
-
   Widget glassCard({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -246,8 +244,7 @@ class _WaterHomeState extends State<WaterHome> {
   }
 
   Widget _buildTopCard() {
-    final progress =
-        goalMl == 0 ? 0.0 : (waterMl / goalMl).clamp(0.0, 1.0);
+    final progress = goalMl == 0 ? 0.0 : (waterMl / goalMl).clamp(0.0, 1.0);
 
     return glassCard(
       child: Stack(
@@ -256,17 +253,26 @@ class _WaterHomeState extends State<WaterHome> {
             const Positioned(
               top: 0,
               right: 0,
-              child: Icon(Icons.local_fire_department,
-                  color: Colors.orange),
+              child: Icon(
+                Icons.local_fire_department,
+                color: Colors.orange,
+              ),
             ),
           Column(
             children: [
-              const Icon(Icons.water_drop,
-                  size: 90, color: Color(0xFF4DB7FF)),
+              const Icon(
+                Icons.water_drop,
+                size: 90,
+                color: Color(0xFF4DB7FF),
+              ),
               const SizedBox(height: 12),
-              Text('$waterMl мл',
-                  style: const TextStyle(
-                      fontSize: 42, fontWeight: FontWeight.bold)),
+              Text(
+                '$waterMl мл',
+                style: const TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 6),
               Text('Цель: $goalMl мл'),
               const SizedBox(height: 12),
@@ -294,7 +300,7 @@ class _WaterHomeState extends State<WaterHome> {
     return Column(
       children: [
         Text(v, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(t, style: const TextStyle(fontSize: 12))
+        Text(t, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
@@ -375,16 +381,38 @@ class _WaterHomeState extends State<WaterHome> {
       appBar: AppBar(
         title: const Text('Hydro Tracker'),
         actions: [
-          IconButton(onPressed: _changeGoal, icon: const Icon(Icons.flag)),
-          IconButton(onPressed: _resetWater, icon: const Icon(Icons.refresh)),
+          IconButton(
+            onPressed: _changeGoal,
+            icon: const Icon(Icons.flag),
+          ),
+          IconButton(
+            onPressed: _resetWater,
+            icon: const Icon(Icons.refresh),
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildTopCard(),
+          const SizedBox(height: 10),
+          const Text(
+            'TEST 9.0.2',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 16),
-          Row(children: [_button(150), _button(200), _button(300)]),
+          Row(
+            children: [
+              _button(150),
+              _button(200),
+              _button(300),
+            ],
+          ),
           const SizedBox(height: 16),
           _buildStats(),
           const SizedBox(height: 16),
