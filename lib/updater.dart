@@ -33,11 +33,11 @@ class UpdateInfo {
 // 🚀 ОБНОВЛЯТОР
 // =========================
 class Updater {
-  // 🔥 ломаем кеш
   static const String url =
-      "https://blad-7.github.io/update_host/update.json?v=4";
+      "https://raw.githubusercontent.com/Blad-7/update_host/main/update.json";
 
-  static const String currentVersion = "9.0.2";
+  // 🔥 ВАЖНО: обновили
+  static const String currentVersion = "10.0.2";
 
   // =========================
   // 🔍 ПРОВЕРКА
@@ -47,13 +47,7 @@ class Updater {
       debugPrint("=== UPDATE CHECK START ===");
       debugPrint("CURRENT VERSION: $currentVersion");
 
-      final res = await http.get(
-        Uri.parse(url),
-        headers: {
-          "Cache-Control": "no-cache",
-          "Pragma": "no-cache",
-        },
-      ).timeout(const Duration(seconds: 5));
+      final res = await http.get(Uri.parse(url));
 
       debugPrint("STATUS: ${res.statusCode}");
 
@@ -109,9 +103,7 @@ class Updater {
     String apkUrl,
     Function(double) onProgress,
   ) async {
-    // 🔥 сохраняем в DOWNLOADS
-    final dir = Directory("/storage/emulated/0/Download");
-    final path = "${dir.path}/hydro_update.apk";
+    final path = "/storage/emulated/0/Download/hydro_update.apk";
     final file = File(path);
 
     debugPrint("SAVE TO: $path");
@@ -125,6 +117,11 @@ class Updater {
     await dio.download(
       apkUrl,
       path,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: true,
+        receiveTimeout: const Duration(seconds: 60),
+      ),
       onReceiveProgress: (received, total) {
         if (total > 0) {
           onProgress(received / total);
@@ -139,18 +136,17 @@ class Updater {
     final size = file.lengthSync();
     debugPrint("SIZE: $size");
 
-    if (size < 1000000) {
-      throw Exception("APK поврежден");
+    if (size < 5000000) {
+      throw Exception("Файл поврежден (возможно не APK)");
     }
 
-    // 🔥 пробуем открыть установщик
     final result = await OpenFilex.open(path);
-    debugPrint("OPEN: ${result.type}");
 
-    // 🔥 если не открылся — fallback
+    debugPrint("OPEN RESULT: ${result.type}");
+
     if (result.type.name != 'done') {
       throw Exception(
-        "Не удалось открыть установщик.\nОткрой вручную:\nDownload/hydro_update.apk",
+        "Не удалось открыть установку.\nОткрой вручную:\nDownload/hydro_update.apk",
       );
     }
   }
@@ -211,14 +207,6 @@ class _UpdateGateState extends State<UpdateGate> {
             progress = p;
           });
         },
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Файл скачан → открой Download и установи APK"),
-        ),
       );
     } catch (e) {
       if (!mounted) return;

@@ -19,7 +19,7 @@ def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '
 android {
     namespace "com.example.hydro_tracker_app"
 
-    // ✅ оставляем 33 (как у тебя работало)
+    // ✅ ОСТАЕМСЯ НА 33
     compileSdk 33
 
     ndkVersion flutter.ndkVersion
@@ -41,11 +41,27 @@ android {
 
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        multiDexEnabled true
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    // 🔥 фикс конфликтов библиотек
+    packagingOptions {
+        resources {
+            excludes += [
+                '/META-INF/AL2.0',
+                '/META-INF/LGPL2.1',
+                '/META-INF/LICENSE',
+                '/META-INF/NOTICE'
+            ]
         }
     }
 }
@@ -55,6 +71,6 @@ flutter {
 }
 
 dependencies {
-    // 🔥 фикс для старого SDK (иногда нужен)
-    implementation 'androidx.core:core-ktx:1.10.1'
+    // ✅ стабильная версия под SDK 33
+    implementation 'androidx.core:core-ktx:1.9.0'
 }

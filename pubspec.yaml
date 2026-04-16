@@ -2,7 +2,8 @@ name: hydro_tracker_app
 description: "Hydro Tracker App"
 publish_to: 'none'
 
-version: 9.0.2+1
+# 🔥 ОБНОВИЛИ ВЕРСИЮ
+version: 10.0.2+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

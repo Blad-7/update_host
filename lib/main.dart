@@ -78,6 +78,9 @@ class _WaterHomeState extends State<WaterHome> {
   int goalMl = 2000;
   bool loading = true;
 
+  // 🔥 НОВОЕ
+  int intervalMinutes = 60;
+
   Map<String, int> dailyHistory = {};
   Timer? reminderTimer;
 
@@ -87,6 +90,10 @@ class _WaterHomeState extends State<WaterHome> {
   String get todayKey => _key(DateTime.now());
 
   bool get isGoalReached => waterMl >= goalMl && goalMl > 0;
+
+  // 🔥 РАСЧЕТЫ
+  int get remindersPerDay => (24 * 60 ~/ intervalMinutes);
+  int get waterPerReminder => (goalMl ~/ remindersPerDay);
 
   @override
   void initState() {
@@ -108,6 +115,7 @@ class _WaterHomeState extends State<WaterHome> {
     final prefs = await SharedPreferences.getInstance();
 
     goalMl = prefs.getInt('goal_ml') ?? 2000;
+    intervalMinutes = prefs.getInt('interval') ?? 60;
 
     final raw = prefs.getString('daily_history');
 
@@ -125,6 +133,7 @@ class _WaterHomeState extends State<WaterHome> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('daily_history', jsonEncode(dailyHistory));
     await prefs.setInt('goal_ml', goalMl);
+    await prefs.setInt('interval', intervalMinutes);
   }
 
   Future<void> _addWater(int amount) async {
@@ -195,29 +204,14 @@ class _WaterHomeState extends State<WaterHome> {
   void _startReminder() {
     reminderTimer?.cancel();
 
-    final now = DateTime.now();
-
-    if (now.hour < 8 || now.hour >= 22) return;
-
-    final remaining = (goalMl - waterMl).clamp(0, goalMl);
-    if (remaining <= 0) return;
-
-    int portions = (remaining / 200).ceil();
-
-    final end = DateTime(now.year, now.month, now.day, 22);
-    final minutesLeft = end.difference(now).inMinutes;
-
-    if (minutesLeft <= 0) return;
-
-    int interval = (minutesLeft / portions).floor();
-
-    if (interval < 20) interval = 20;
-
-    reminderTimer = Timer.periodic(Duration(minutes: interval), (_) {
+    reminderTimer =
+        Timer.periodic(Duration(minutes: intervalMinutes), (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('💧 Выпей воды (~200 мл)')),
+        SnackBar(
+          content: Text('💧 Выпей ~$waterPerReminder мл воды'),
+        ),
       );
     });
   }
@@ -247,115 +241,21 @@ class _WaterHomeState extends State<WaterHome> {
     final progress = goalMl == 0 ? 0.0 : (waterMl / goalMl).clamp(0.0, 1.0);
 
     return glassCard(
-      child: Stack(
+      child: Column(
         children: [
-          if (isGoalReached)
-            const Positioned(
-              top: 0,
-              right: 0,
-              child: Icon(
-                Icons.local_fire_department,
-                color: Colors.orange,
-              ),
+          const Icon(Icons.water_drop, size: 90, color: Color(0xFF4DB7FF)),
+          const SizedBox(height: 12),
+          Text(
+            '$waterMl мл',
+            style: const TextStyle(
+              fontSize: 42,
+              fontWeight: FontWeight.bold,
             ),
-          Column(
-            children: [
-              const Icon(
-                Icons.water_drop,
-                size: 90,
-                color: Color(0xFF4DB7FF),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '$waterMl мл',
-                style: const TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text('Цель: $goalMl мл'),
-              const SizedBox(height: 12),
-              LinearProgressIndicator(value: progress),
-            ],
           ),
+          Text('Цель: $goalMl мл'),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(value: progress),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStats() {
-    return glassCard(
-      child: Row(
-        children: [
-          Expanded(child: _stat('Сегодня', '$waterMl')),
-          Expanded(child: _stat('Среднее', '${_avg(7)}')),
-          Expanded(child: _stat('Серия', '${_streak()}')),
-        ],
-      ),
-    );
-  }
-
-  Widget _stat(String t, String v) {
-    return Column(
-      children: [
-        Text(v, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Text(t, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-
-  int _streak() {
-    int s = 0;
-    final now = DateTime.now();
-
-    for (int i = 0; i < 365; i++) {
-      final d = now.subtract(Duration(days: i));
-      if ((dailyHistory[_key(d)] ?? 0) > 0) {
-        s++;
-      } else {
-        break;
-      }
-    }
-    return s;
-  }
-
-  int _avg(int d) {
-    int sum = 0;
-    final now = DateTime.now();
-
-    for (int i = 0; i < d; i++) {
-      final day = now.subtract(Duration(days: i));
-      sum += dailyHistory[_key(day)] ?? 0;
-    }
-    return (sum / d).round();
-  }
-
-  Widget _buildChart() {
-    final values = List.generate(7, (i) {
-      final d = DateTime.now().subtract(Duration(days: i));
-      return dailyHistory[_key(d)] ?? 0;
-    }).reversed.toList();
-
-    final maxVal = values.fold(1, (a, b) => b > a ? b : a);
-
-    return glassCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: values.map((v) {
-          final h = (v / maxVal) * 100 + 10;
-
-          return Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: h,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4DB7FF),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
@@ -395,17 +295,32 @@ class _WaterHomeState extends State<WaterHome> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildTopCard(),
-          const SizedBox(height: 10),
-          const Text(
-            'TEST 9.0.2',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+
           const SizedBox(height: 16),
+
+          // 🔥 ВЫБОР ИНТЕРВАЛА
+          DropdownButton<int>(
+            value: intervalMinutes,
+            items: [15, 30, 60, 120].map((e) {
+              return DropdownMenuItem(
+                value: e,
+                child: Text("Каждые $e мин"),
+              );
+            }).toList(),
+            onChanged: (v) {
+              setState(() {
+                intervalMinutes = v!;
+              });
+              _saveData();
+              _startReminder();
+            },
+          ),
+
+          Text("Напоминаний: $remindersPerDay"),
+          Text("За раз: $waterPerReminder мл"),
+
+          const SizedBox(height: 16),
+
           Row(
             children: [
               _button(150),
@@ -413,10 +328,6 @@ class _WaterHomeState extends State<WaterHome> {
               _button(300),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildStats(),
-          const SizedBox(height: 16),
-          _buildChart(),
         ],
       ),
     );
