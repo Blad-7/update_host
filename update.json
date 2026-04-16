@@ -1,5 +1,5 @@
 {
-  "version": "9.0.2",
-  "apk_url": "https://blad-7.github.io/update_host/app.apk",
-  "notes": "Тест обновления Hydro Tracker до версии 9.0.2 (красная метка)"
+  "version": "10.0.2",
+  "apk_url": "https://raw.githubusercontent.com/Blad-7/update_host/main/app.apk",
+  "notes": "UI fix + smart reminder"
 }
